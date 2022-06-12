@@ -1,15 +1,33 @@
 const express = require('express');
 const app = express();
-const requestLogger = (request, response, next) => {
-  console.log('Method:', request.method);
-  console.log('Path:  ', request.path);
-  console.log('Body:  ', request.body);
-  console.log('---');
-  next();
-};
+const morgan = require('morgan');
+
+morgan.token('path', (req) => req.path);
+
+// morgan.token('person', (req) => req.body.name);
+
+// morgan.token('number', (req) => req.body.number);
+
+morgan.token('nameNumber', (req) =>
+  JSON.stringify({ name: req.body.name, number: req.body.number })
+);
+
+// const requestLogger = (request, response, next) => {
+//   console.log('Method:', request.method);
+//   console.log('Path:  ', request.path);
+//   console.log('Body:  ', request.body);
+//   console.log('---');
+//   next();
+// };
 
 app.use(express.json());
-app.use(requestLogger);
+// app.use(requestLogger);
+app.use(
+  morgan(
+    ':method :path :status :res[content-length] - :response-time ms :nameNumber'
+  )
+  // {"name":":person", "number":":number"}
+);
 
 let persons = [
   {
@@ -34,8 +52,11 @@ let persons = [
   },
 ];
 
-app.get('/', (request, response) => {
-  response.send('<h1>Exercises 3.1-3.6</h1>');
+// app.get('/', (request, response) => {
+//   response.send('<h1>Exercises 3.1-3.6</h1>');
+// });
+app.get('/', function (req, res) {
+  res.send('hello, world!');
 });
 
 app.get('/info', (request, response) => {
@@ -73,6 +94,7 @@ const generateNumber = () => {
 
 app.post('/api/persons', (request, response) => {
   const body = request.body;
+  body.number = generateNumber();
   const names = persons.map((e) => e.name);
   if (names.includes(body.name)) {
     return response.status(404).json({
@@ -87,7 +109,7 @@ app.post('/api/persons', (request, response) => {
   const person = {
     id: generateId(),
     name: body.name,
-    number: generateNumber(),
+    number: body.number,
   };
 
   persons = persons.concat(person);
